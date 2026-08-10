@@ -111,7 +111,7 @@ This project began as a simple lead scoring script and developed into a complete
 | `billswift-webinar-registration.html` | The webinar signup page (all dropdowns match the scoring engine's exact vocabulary) |
 | `billswift_testing_dataset_final.xlsx` | Training data for the Random Forest model |
 | `BillSwift_Master_Google_Sheet_SAMPLE.xlsx` | Sample of the final Google Sheets output (Master_Leads_Database + Quarantined_Hygiene_Queue), ~50 fictional leads |
-| `BillSwift_v2_Project_Summary.docx` | Full project write-up: architecture diagrams, design decisions, and the reasoning behind them |
+| `Project Overview.pdf` | Full project write-up: architecture diagrams, design decisions, and the reasoning behind them |
 
 ---
 
