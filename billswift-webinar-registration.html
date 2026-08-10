@@ -1,0 +1,1017 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bill Swift — Mastering Usage-Based Billing</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  @property --angle{
+    syntax: '<angle>';
+    initial-value: 0deg;
+    inherits: false;
+  }
+
+  :root{
+    --bg:#0a0a0a;
+    --glass-bg: rgba(255,255,255,0.042);
+    --glass-bg-strong: rgba(255,255,255,0.07);
+    --glass-bg-deep: rgba(255,255,255,0.028);
+    --glass-border: rgba(255,255,255,0.14);
+    --glass-border-soft: rgba(255,255,255,0.07);
+    --line: rgba(255,255,255,0.07);
+    --text-0:#F8F8F8;
+    --text-1:#9A9DA6;
+    --text-2:#52555E;
+    --red:#E03030;
+    --red-soft:#C02828;
+    --red-glow: rgba(224,48,48,0.30);
+    --silver:#C8CBD4;
+    --silver-dim:#7A7D86;
+  }
+
+  *{ box-sizing:border-box; margin:0; padding:0; }
+
+  html,body{
+    background:var(--bg);
+    color:var(--text-0);
+    font-family:'Plus Jakarta Sans', sans-serif;
+    min-height:100vh;
+    overflow-x:hidden;
+  }
+
+  /* ===== AMBIENT BACKGROUND GLOW ===== */
+  .ambient-glow{
+    position:fixed;
+    inset:0;
+    z-index:0;
+    pointer-events:none;
+    overflow:hidden;
+  }
+  .glow-blob{
+    position:absolute;
+    border-radius:50%;
+    filter: blur(110px);
+    opacity:0.55;
+  }
+  .glow-blob.purple{
+    width:560px; height:560px;
+    background: #222226;
+    top:-160px; left:-120px;
+  }
+  .glow-blob.blue{
+    width:620px; height:620px;
+    background: #1c1c20;
+    bottom:-220px; right:-160px;
+    opacity:0.9;
+  }
+  .glow-blob.purple-2{
+    width:380px; height:380px;
+    background: #3a0e0e;
+    top:40%; right:8%;
+    opacity:0.28;
+  }
+
+  /* ===== TOP BRAND BAR ===== */
+  .brand-bar{
+    position:relative; z-index:2;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:16px;
+    padding: 18px 44px;
+    background: rgba(255,255,255,0.04);
+    backdrop-filter: blur(40px) saturate(180%);
+    -webkit-backdrop-filter: blur(40px) saturate(180%);
+    border-bottom:1px solid rgba(255,255,255,0.10);
+    box-shadow: 0 1px 0 rgba(255,255,255,0.06) inset;
+  }
+  .brand-mark{ display:flex; align-items:center; gap:12px; }
+  .brand-mark svg{ width:38px; height:38px; flex-shrink:0; }
+  .brand-wordmark{ display:flex; flex-direction:column; line-height:1; }
+  .brand-wordmark .name{
+    font-weight:800;
+    font-size:18px;
+    letter-spacing:0.01em;
+    color:var(--text-0);
+  }
+  .brand-wordmark .tagline{
+    font-family:'JetBrains Mono', monospace;
+    font-size:9.5px;
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    color:var(--text-2);
+    margin-top:4px;
+  }
+  .eyebrow-tag{
+    display:flex; align-items:center; gap:9px;
+    font-family:'JetBrains Mono', monospace;
+    font-size:10.5px;
+    letter-spacing:0.14em;
+    color:var(--text-1);
+    border:1px solid var(--glass-border);
+    background:var(--glass-bg);
+    padding:7px 14px;
+    border-radius:100px;
+  }
+  .eyebrow-tag .dot{
+    width:6px; height:6px; border-radius:50%;
+    background: var(--red);
+    box-shadow:0 0 8px var(--red-glow);
+  }
+  @media (max-width: 640px){
+    .brand-bar{ padding:14px 20px; }
+    .eyebrow-tag{ display:none; }
+  }
+
+  .main-grid{
+    position:relative; z-index:1;
+    display:grid;
+    grid-template-columns: 1.05fr 1fr;
+    min-height: calc(100vh - 74px);
+  }
+  @media (max-width: 960px){
+    .main-grid{ grid-template-columns: 1fr; }
+  }
+
+  /* ===== LEFT PANEL ===== */
+  .info-panel{
+    padding: 64px 56px 48px;
+    display:flex;
+    flex-direction:column;
+  }
+
+  .headline{
+    font-weight:800;
+    font-size: clamp(32px, 4vw, 48px);
+    line-height:1.08;
+    letter-spacing:-0.01em;
+    margin-bottom:18px;
+    background: linear-gradient(135deg, #ffffff 30%, #C9CEDC 100%);
+    -webkit-background-clip:text;
+    background-clip:text;
+    -webkit-text-fill-color:transparent;
+  }
+  .headline .grad{
+    background: linear-gradient(135deg, var(--red) 20%, #ff6b6b 60%, var(--silver) 100%);
+    -webkit-background-clip:text;
+    background-clip:text;
+    -webkit-text-fill-color:transparent;
+  }
+
+  .subhead{
+    font-size:15.5px;
+    color:var(--text-1);
+    line-height:1.7;
+    max-width:480px;
+    margin-bottom:36px;
+  }
+
+  .spec-plate{
+    border:1px solid var(--glass-border);
+    background: rgba(255,255,255,0.042);
+    backdrop-filter: blur(40px) saturate(180%);
+    -webkit-backdrop-filter: blur(40px) saturate(180%);
+    border-radius:18px;
+    margin-bottom:36px;
+    overflow:hidden;
+    box-shadow: 0 1px 0 rgba(255,255,255,0.12) inset, 0 8px 32px rgba(0,0,0,0.3);
+  }
+  .spec-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:15px 22px;
+    border-bottom:1px solid var(--line);
+  }
+  .spec-row:last-child{ border-bottom:none; }
+  .spec-label{
+    font-family:'JetBrains Mono', monospace;
+    font-size:10.5px;
+    letter-spacing:0.12em;
+    color:var(--text-2);
+    text-transform:uppercase;
+  }
+  .spec-value{
+    font-size:14px;
+    font-weight:600;
+    color:var(--text-0);
+    letter-spacing:0.01em;
+  }
+
+  .agenda{ margin-top:auto; }
+  .agenda-title{
+    font-family:'JetBrains Mono', monospace;
+    font-size:11px;
+    letter-spacing:0.14em;
+    color:var(--text-2);
+    text-transform:uppercase;
+    margin-bottom:16px;
+    padding-bottom:10px;
+    border-bottom:1px solid var(--line);
+  }
+  .agenda-item{ display:flex; gap:14px; align-items:flex-start; margin-bottom:15px; }
+  .agenda-icon{
+    flex-shrink:0;
+    width:30px; height:30px;
+    border-radius:8px;
+    border:1px solid rgba(255,255,255,0.10);
+    background: rgba(255,255,255,0.05);
+    backdrop-filter: blur(10px);
+    display:flex; align-items:center; justify-content:center;
+    color:var(--red);
+  }
+  .agenda-icon svg{ width:15px; height:15px; }
+  .agenda-text{ font-size:13.5px; color:var(--text-1); line-height:1.55; padding-top:5px; }
+  .agenda-text strong{ color:var(--text-0); font-weight:600; }
+
+  /* ===== RIGHT PANEL — GLASS FORM ===== */
+  .form-panel{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding: 48px 32px;
+  }
+
+  .form-card{
+    width:100%;
+    max-width:460px;
+    background: rgba(255,255,255,0.06);
+    border:1px solid rgba(255,255,255,0.15);
+    border-radius:28px;
+    backdrop-filter: blur(60px) saturate(200%);
+    -webkit-backdrop-filter: blur(60px) saturate(200%);
+    box-shadow:
+      0 0 0 1px rgba(255,255,255,0.08) inset,
+      0 2px 0 rgba(255,255,255,0.12) inset,
+      0 24px 80px rgba(0,0,0,0.55),
+      0 8px 24px rgba(0,0,0,0.3);
+    padding: 36px 34px 32px;
+  }
+
+  .form-card-header{ margin-bottom:26px; }
+  .unit-tag{
+    font-family:'JetBrains Mono', monospace;
+    font-size:10.5px;
+    color:var(--text-2);
+    letter-spacing:0.1em;
+    margin-bottom:8px;
+  }
+  .unit-tag span{ color:var(--red); }
+  .form-title{
+    font-size:21px;
+    font-weight:800;
+    letter-spacing:-0.01em;
+    margin-bottom:6px;
+  }
+  .form-desc{ font-size:13.5px; color:var(--text-1); line-height:1.5; }
+
+  fieldset{ border:none; margin-bottom:22px; }
+  legend{
+    font-family:'JetBrains Mono', monospace;
+    font-size:10px;
+    letter-spacing:0.13em;
+    text-transform:uppercase;
+    color:var(--text-1);
+    margin-bottom:13px;
+    padding-bottom:8px;
+    border-bottom:1px solid var(--line);
+    width:100%;
+    position:relative;
+  }
+  legend::after{
+    content:"";
+    position:absolute;
+    left:0; bottom:-1px;
+    width:26px; height:1px;
+    background: var(--red);
+  }
+
+  .field{ margin-bottom:14px; }
+  .field label{
+    display:block;
+    font-size:11.5px;
+    font-weight:600;
+    color:var(--text-1);
+    margin-bottom:7px;
+    letter-spacing:0.02em;
+  }
+
+  /* ===== INPUT WRAP + LASER TRACE + DATA PULSE ===== */
+  .input-wrap{
+    position:relative;
+    display:flex;
+    align-items:center;
+    border-radius:10px;
+  }
+
+  .trace-frame{
+    position:absolute;
+    inset:0;
+    border-radius:10px;
+    padding:1.4px;
+    background: conic-gradient(from var(--angle), transparent 0%, transparent 72%, var(--red) 84%, #ff9090 93%, transparent 100%);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+            mask-composite: exclude;
+    opacity:0;
+    pointer-events:none;
+    transition: opacity .25s ease;
+    z-index:2;
+  }
+  .input-wrap.tracing .trace-frame{
+    opacity:1;
+    animation: traceSpin 0.6s linear 1;
+  }
+  @keyframes traceSpin{
+    from{ --angle: 0deg; }
+    to{ --angle: 360deg; }
+  }
+
+  .data-pulse{
+    position:absolute;
+    inset:0;
+    border-radius:10px;
+    border:1px solid rgba(224,48,48,0.50);
+    opacity:0.85;
+    pointer-events:none;
+    z-index:1;
+    transform:scale(1);
+  }
+  .data-pulse.expand{
+    transition: transform 0.4s cubic-bezier(.2,.7,.3,1), opacity 0.4s ease-out;
+    transform:scale(1.18);
+    opacity:0;
+  }
+
+  .input-wrap .icon{
+    position:absolute; left:13px;
+    width:16px; height:16px;
+    color:var(--text-2);
+    pointer-events:none;
+    display:flex;
+    z-index:1;
+  }
+  .input-wrap .icon svg{ width:100%; height:100%; }
+
+  input[type="text"], input[type="email"], select{
+    width:100%;
+    background: rgba(255,255,255,0.04);
+    border:1px solid rgba(255,255,255,0.10);
+    color:var(--text-0);
+    font-family:'Plus Jakarta Sans', sans-serif;
+    font-size:13.5px;
+    border-radius:12px;
+    padding:11.5px 14px 11.5px 40px;
+    transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+    appearance:none; -webkit-appearance:none;
+    position:relative;
+    z-index:1;
+    backdrop-filter: blur(10px);
+  }
+  select{
+    cursor:pointer;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%239A9DA6'><path d='M4 6l4 4 4-4'/></svg>");
+    background-repeat:no-repeat;
+    background-position: right 14px center;
+    background-size:13px;
+  }
+  select option{ background:#111113; color:var(--text-0); }
+  input::placeholder{ color:var(--text-2); }
+  input:focus, select:focus{
+    outline:none;
+    border-color: rgba(224,48,48,0.50);
+    background: rgba(255,255,255,0.07);
+    box-shadow: 0 0 0 3px rgba(224,48,48,0.10), 0 1px 0 rgba(255,255,255,0.08) inset;
+  }
+
+  .hint{ font-size:11px; color:var(--text-2); margin-top:6px; line-height:1.4; }
+  .hint.error{ color:#FF6B6B; display:none; }
+  .hint.error.show{ display:block; }
+
+  .conditional-field{ display:none; }
+  .conditional-field.show{ display:block; }
+
+  .submit-btn{
+    width:100%;
+    position: relative;
+    background: linear-gradient(
+      135deg,
+      rgba(255,255,255,0.25) 0%,
+      rgba(255,255,255,0.08) 40%,
+      rgba(255,255,255,0.15) 60%,
+      rgba(255,255,255,0.05) 100%
+    );
+    border: 1px solid rgba(255,255,255,0.30);
+    border-bottom: 1px solid rgba(255,255,255,0.10);
+    border-top: 1px solid rgba(255,255,255,0.50);
+    color: #ffffff;
+    font-family:'Plus Jakarta Sans', sans-serif;
+    font-size:14.5px;
+    font-weight:700;
+    letter-spacing:0.05em;
+    text-transform:uppercase;
+    border-radius:14px;
+    padding:14px 20px;
+    cursor:pointer;
+    margin-top:4px;
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    transition: all 0.2s ease;
+    display:flex; align-items:center; justify-content:center; gap:10px;
+    overflow: hidden;
+    box-shadow:
+      0 8px 32px rgba(0,0,0,0.35),
+      0 1px 0 rgba(255,255,255,0.5) inset,
+      0 -1px 0 rgba(0,0,0,0.15) inset,
+      0 0 0 1px rgba(255,255,255,0.06) inset;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+  }
+  /* liquid shine sweep across the button */
+  .submit-btn::before{
+    content: "";
+    position: absolute;
+    top: 0; left: -75%;
+    width: 50%; height: 100%;
+    background: linear-gradient(
+      120deg,
+      transparent 0%,
+      rgba(255,255,255,0.18) 50%,
+      transparent 100%
+    );
+    transform: skewX(-20deg);
+    transition: left 0.55s ease;
+    pointer-events: none;
+  }
+  /* inner top gloss line */
+  .submit-btn::after{
+    content: "";
+    position: absolute;
+    top: 1px; left: 12%; right: 12%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.6), transparent);
+    border-radius: 50%;
+    pointer-events: none;
+  }
+  .submit-btn:hover{
+    background: linear-gradient(
+      135deg,
+      rgba(255,255,255,0.32) 0%,
+      rgba(255,255,255,0.12) 40%,
+      rgba(255,255,255,0.22) 60%,
+      rgba(255,255,255,0.08) 100%
+    );
+    box-shadow:
+      0 12px 40px rgba(0,0,0,0.4),
+      0 1px 0 rgba(255,255,255,0.6) inset,
+      0 -1px 0 rgba(0,0,0,0.15) inset,
+      0 0 0 1px rgba(255,255,255,0.1) inset;
+    transform: translateY(-1px);
+  }
+  .submit-btn:hover::before{ left: 125%; }
+  .submit-btn:active{ transform: translateY(1px); filter: brightness(0.95); }
+  .submit-btn svg{ width:16px; height:16px; stroke: #ffffff; }
+
+  .privacy-note{
+    text-align:center;
+    font-size:11px;
+    color:var(--text-2);
+    margin-top:16px;
+    line-height:1.5;
+  }
+
+  .success-screen{ display:none; text-align:center; padding:36px 6px; }
+  .success-screen.show{ display:block; }
+  .success-screen .check{
+    width:54px; height:54px;
+    border-radius:14px;
+    background: rgba(224,48,48,0.15);
+    border: 1px solid rgba(224,48,48,0.35);
+    backdrop-filter: blur(20px);
+    margin:0 auto 22px;
+    display:flex; align-items:center; justify-content:center;
+    color:var(--red);
+    box-shadow: 0 6px 20px rgba(224,48,48,0.20), 0 1px 0 rgba(255,255,255,0.08) inset;
+  }
+  .success-screen .check svg{ width:24px; height:24px; }
+  .success-screen h3{
+    font-size:19px;
+    font-weight:800;
+    margin-bottom:10px;
+    letter-spacing:-0.01em;
+  }
+  .success-screen p{ font-size:13.5px; color:var(--text-1); line-height:1.6; }
+
+  #regForm.hide{ display:none; }
+</style>
+</head>
+<body>
+
+  <div class="ambient-glow">
+    <div class="glow-blob purple"></div>
+    <div class="glow-blob blue"></div>
+    <div class="glow-blob purple-2"></div>
+  </div>
+
+  <header class="brand-bar">
+    <div class="brand-mark">
+      <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="bsGrad" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse">
+            <stop offset="0" stop-color="#C8CBD4"/>
+            <stop offset="1" stop-color="#E03030"/>
+          </linearGradient>
+        </defs>
+        <rect x="1" y="1" width="46" height="46" rx="13" fill="#10141f" stroke="url(#bsGrad)" stroke-width="1.5"/>
+        <path d="M16 13h9.5c4 0 6.5 2.1 6.5 5.4 0 2.3-1.3 3.9-3.3 4.6 2.4.6 4 2.5 4 5.1 0 3.6-2.7 6.9-7 6.9H16V13zm5 7.6h4c1.4 0 2.3-.8 2.3-2s-.9-2-2.3-2h-4v4zm0 9.5h4.7c1.6 0 2.7-1 2.7-2.5s-1.1-2.5-2.7-2.5H21v5z" fill="url(#bsGrad)"/>
+        <path d="M16 30l4-6 2.5 8" stroke="#fff" stroke-width="0" opacity="0"/>
+      </svg>
+      <div class="brand-wordmark">
+        <span class="name">Bill Swift</span>
+        <span class="tagline">Usage-Based Billing Infrastructure</span>
+      </div>
+    </div>
+    <div class="eyebrow-tag"><span class="dot"></span> LIVE WEBINAR · BILLING OPS</div>
+  </header>
+
+  <div class="main-grid">
+
+    <!-- LEFT: INFO PANEL -->
+    <div class="info-panel">
+
+      <h1 class="headline">Mastering <span class="grad">Usage-Based Billing</span></h1>
+
+      <p class="subhead">For finance and RevOps leaders at Series B+ SaaS companies still running billing on spreadsheets, legacy platforms, or a payment processor that was never built for usage-based pricing.</p>
+
+      <div class="spec-plate">
+        <div class="spec-row">
+          <span class="spec-label">Hosted By</span>
+          <span class="spec-value">Bill Swift</span>
+        </div>
+        <div class="spec-row">
+          <span class="spec-label">Date</span>
+          <span class="spec-value">Thursday, August 27, 2026</span>
+        </div>
+        <div class="spec-row">
+          <span class="spec-label">Time</span>
+          <span class="spec-value">10:00 AM PT / 1:00 PM ET</span>
+        </div>
+        <div class="spec-row">
+          <span class="spec-label">Duration</span>
+          <span class="spec-value">50 Minutes + Live Q&amp;A</span>
+        </div>
+        <div class="spec-row">
+          <span class="spec-label">Cost</span>
+          <span class="spec-value">No Charge</span>
+        </div>
+      </div>
+
+      <div class="agenda">
+        <div class="agenda-title">What You'll Walk Away With</div>
+
+        <div class="agenda-item">
+          <div class="agenda-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 8h10M7 12h10M7 16h6"/></svg>
+          </div>
+          <div class="agenda-text"><strong>Eliminate manual invoicing</strong> — a concrete plan to replace spreadsheets and manual reconciliation with automated, audit-ready billing.</div>
+        </div>
+
+        <div class="agenda-item">
+          <div class="agenda-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6l8-4z"/><path d="M9 12l2 2 4-4"/></svg>
+          </div>
+          <div class="agenda-text"><strong>Pass audit without extra headcount</strong> — how to structure revenue recognition so finance doesn't dread quarter-close.</div>
+        </div>
+
+        <div class="agenda-item">
+          <div class="agenda-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+          </div>
+          <div class="agenda-text"><strong>Migrate without disrupting customers</strong> — a phased, practical path off flat-rate or manual billing onto usage-based pricing.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: GLASS FORM PANEL -->
+    <div class="form-panel">
+      <div class="form-card">
+
+        <div class="form-card-header">
+          <div class="unit-tag">REGISTRATION <span>// BS-WEBINAR</span></div>
+          <div class="form-title">Reserve Your Seat</div>
+          <div class="form-desc">Tell us about your billing setup so we can tailor the session.</div>
+        </div>
+
+        <form id="regForm">
+
+          <fieldset>
+            <legend>01 — Contact</legend>
+
+            <div class="field">
+              <label for="firstName">First Name</label>
+              <div class="input-wrap">
+                <div class="trace-frame"></div>
+                <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg></span>
+                <input type="text" id="firstName" name="first_name" placeholder="e.g. Sarah" required>
+              </div>
+            </div>
+
+            <div class="field">
+              <label for="lastName">Last Name</label>
+              <div class="input-wrap">
+                <div class="trace-frame"></div>
+                <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg></span>
+                <input type="text" id="lastName" name="last_name" placeholder="e.g. Chen" required>
+              </div>
+            </div>
+
+            <div class="field">
+              <label for="workEmail">Work Email</label>
+              <div class="input-wrap">
+                <div class="trace-frame"></div>
+                <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="1"/><path d="M3 7l9 6 9-6"/></svg></span>
+                <input type="email" id="workEmail" name="email" placeholder="name@company.com" required>
+              </div>
+              <div class="hint">Work email preferred for the best experience.</div>
+              <div class="hint error" id="emailError">This looks like a personal email — work email is preferred but you can still register.</div>
+            </div>
+
+            <div class="field">
+              <label for="companyName">Company Name</label>
+              <div class="input-wrap">
+                <div class="trace-frame"></div>
+                <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 21V8l8-5 8 5v13"/><path d="M9 21v-6h6v6"/></svg></span>
+                <input type="text" id="companyName" name="company_name" placeholder="e.g. Acme Cloud Inc." required>
+              </div>
+            </div>
+          </fieldset>
+
+          <fieldset>
+            <legend>02 — Company Profile</legend>
+
+            <div class="field">
+              <label for="industry">Industry / Vertical</label>
+              <div class="input-wrap">
+                <div class="trace-frame"></div>
+                <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 21V8l8-5 8 5v13"/><path d="M9 21v-6h6v6"/></svg></span>
+                <select id="industry" name="industry" required>
+                  <option value="" disabled selected>Select an industry</option>
+                  <option value="b2b-saas">B2B SaaS</option>
+                  <option value="ai-cloud">AI &amp; Cloud Infrastructure</option>
+                  <option value="ecommerce">E-commerce</option>
+                  <option value="edtech">EdTech</option>
+                  <option value="digital-media">Digital Media</option>
+                  <option value="fintech">FinTech</option>
+                  <option value="proptech-iot">PropTech &amp; IoT</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="field conditional-field" id="industryOtherField">
+              <label for="industryOther">Please Specify Your Industry</label>
+              <div class="input-wrap">
+                <div class="trace-frame"></div>
+                <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg></span>
+                <input type="text" id="industryOther" name="industry_other" placeholder="e.g. BioTech">
+              </div>
+            </div>
+
+            <div class="field">
+              <label for="jobTitle">Job Title</label>
+              <div class="input-wrap">
+                <div class="trace-frame"></div>
+                <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></span>
+                <select id="jobTitle" name="job_title" required>
+                  <option value="" disabled selected>Select your role</option>
+                  <option value="cfo_head_of_finance">CFO / Head of Finance / VP Finance</option>
+                  <option value="cro_head_of_revops">CRO / Head of RevOps</option>
+                  <option value="ceo_founder">CEO / Founder</option>
+                  <option value="director">Director</option>
+                  <option value="manager">Manager</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="field conditional-field" id="jobTitleOtherField">
+              <label for="jobTitleOther">Please Specify Your Role</label>
+              <div class="input-wrap">
+                <div class="trace-frame"></div>
+                <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg></span>
+                <input type="text" id="jobTitleOther" name="job_title_other" placeholder="e.g. Business Analyst">
+              </div>
+            </div>
+
+            <div class="field">
+              <label for="companySize">Company Size</label>
+              <div class="input-wrap">
+                <div class="trace-frame"></div>
+                <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3"/><path d="M2 20c0-3.3 3.1-6 7-6s7 2.7 7 6"/><circle cx="17" cy="8" r="2.5"/><path d="M16 14.2c2.9.5 5 2.6 5 5.8"/></svg></span>
+                <select id="companySize" name="company_size" required>
+                  <option value="" disabled selected>Select company size</option>
+                  <option value="under_20">1–19 employees</option>
+                  <option value="20_199">20–199 employees</option>
+                  <option value="200_999">200–999 employees</option>
+                  <option value="1000_plus">1000+ employees</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="field">
+              <label for="crmStack">CRM Currently in Use</label>
+              <div class="input-wrap">
+                <div class="trace-frame"></div>
+                <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M3 9h18M8 14h4"/></svg></span>
+                <select id="crmStack" name="crm_stack" required>
+                  <option value="" disabled selected>Select your CRM</option>
+                  <option value="salesforce">Salesforce</option>
+                  <option value="hubspot_enterprise">HubSpot (Enterprise)</option>
+                  <option value="hubspot_other">HubSpot (Starter / Pro)</option>
+                  <option value="other_none">Other / No CRM</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="field conditional-field" id="crmStackOtherField">
+              <label for="crmStackOther">Which CRM (Optional)</label>
+              <div class="input-wrap">
+                <div class="trace-frame"></div>
+                <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg></span>
+                <input type="text" id="crmStackOther" name="crm_stack_other" placeholder="e.g. Zoho CRM, Pipedrive, or leave blank">
+              </div>
+            </div>
+
+            <div class="field">
+              <label for="transactionVolume">Monthly Billing Volume</label>
+              <div class="input-wrap">
+                <div class="trace-frame"></div>
+                <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 17l6-6 4 4 8-8"/><path d="M3 21h18"/></svg></span>
+                <select id="transactionVolume" name="monthly_billing_volume" required>
+                  <option value="" disabled selected>Select volume range</option>
+                  <option value="25000">Under $50K / month</option>
+                  <option value="75000">$50K – $100K / month</option>
+                  <option value="250000">$100K – $500K / month</option>
+                  <option value="1000000">$500K – $2M / month</option>
+                  <option value="5000000">$2M+ / month</option>
+                </select>
+              </div>
+            </div>
+          </fieldset>
+
+          <fieldset>
+            <legend>03 — Billing Context</legend>
+
+            <div class="field">
+              <label for="revenueChallenge">What's Slowing Your Billing Down Right Now?</label>
+              <div class="input-wrap">
+                <div class="trace-frame"></div>
+                <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.3 3.5L2.7 17a1.6 1.6 0 0 0 1.4 2.4h16a1.6 1.6 0 0 0 1.4-2.4L13.7 3.5a1.6 1.6 0 0 0-2.8 0z"/><path d="M12 9.5v4M12 16.5h.01"/></svg></span>
+                <select id="revenueChallenge" name="primary_revenue_challenge" required>
+                  <option value="" disabled selected>Select the one that hits closest to home</option>
+                  <option value="manual-no-automation">We're still doing this manually — spreadsheets, no automation</option>
+                  <option value="revenue-recognition-compliance">Our invoices don't hold up to audit / compliance needs</option>
+                  <option value="migrating-flat-to-usage">We're moving off flat-rate to usage-based pricing</option>
+                  <option value="hybrid-tiered-complexity">Our pricing has gotten too complex — tiers, overages, hybrid</option>
+                  <option value="metering-tracking-accuracy">We can't track usage/consumption accurately in real time</option>
+                  <option value="other">Something else</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="field conditional-field" id="revenueChallengeOtherField">
+              <label for="revenueChallengeOther">Tell Us More (Optional)</label>
+              <div class="input-wrap">
+                <div class="trace-frame"></div>
+                <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg></span>
+                <input type="text" id="revenueChallengeOther" name="primary_revenue_challenge_other" placeholder="e.g. dunning &amp; failed payment recovery">
+              </div>
+            </div>
+
+            <div class="field">
+              <label for="currentBilling">Current Billing Solution</label>
+              <div class="input-wrap">
+                <div class="trace-frame"></div>
+                <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="14" rx="1"/><path d="M8 21h8M12 18v3"/></svg></span>
+                <select id="currentBilling" name="current_billing_tool" required>
+                  <option value="" disabled selected>Select current setup</option>
+                  <option value="modern-platform">Modern billing platform already in place</option>
+                  <option value="legacy-enterprise">Legacy enterprise billing platform</option>
+                  <option value="in-house">In-house custom-built system</option>
+                  <option value="stripe-paypal">Native Stripe/PayPal checkout only</option>
+                  <option value="none-manual">No dedicated billing system (manual / spreadsheets)</option>
+                </select>
+              </div>
+            </div>
+          </fieldset>
+
+          <fieldset>
+            <legend>04 — Attribution</legend>
+
+            <div class="field">
+              <label for="heardFrom">How You Heard About Us</label>
+              <div class="input-wrap">
+                <div class="trace-frame"></div>
+                <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l18-7-7 18-2-8-9-3z"/></svg></span>
+                <select id="heardFrom" name="heard_from" required>
+                  <option value="" disabled selected>Select an option</option>
+                  <option value="linkedin">LinkedIn</option>
+                  <option value="google">Google Search</option>
+                  <option value="referral">Referral from a colleague or partner</option>
+                  <option value="newsletter">Industry newsletter / blog</option>
+                  <option value="partner">Webinar partner / co-host</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+            </div>
+          </fieldset>
+
+          <button type="submit" class="submit-btn">
+            Confirm Registration
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          </button>
+
+          <p class="privacy-note">By registering, you agree to receive event-related communications. We don't share your information with third parties.</p>
+        </form>
+
+        <div class="success-screen" id="successScreen">
+          <div class="check">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 13l4 4L19 7"/></svg>
+          </div>
+          <h3>You're Registered</h3>
+          <p>A confirmation with your calendar invite and join link is on its way to your inbox.</p>
+        </div>
+
+      </div>
+    </div>
+
+  </div><!-- /.main-grid -->
+
+<script>
+  // Kept in sync with app.py's FREE_EMAIL_DOMAINS -- the client-side warning
+  // should always match what the server will actually score.
+  const freeEmailDomains = [
+    'gmail.com','yahoo.com','hotmail.com','outlook.com','aol.com',
+    'icloud.com','live.com','mail.com','protonmail.com','zoho.com'
+  ];
+
+  const emailInput = document.getElementById('workEmail');
+  const emailError = document.getElementById('emailError');
+  const form = document.getElementById('regForm');
+
+  function isFreeEmail(value){
+    const parts = value.split('@');
+    if(parts.length !== 2) return false;
+    return freeEmailDomains.includes(parts[1].toLowerCase().trim());
+  }
+
+  emailInput.addEventListener('input', () => {
+    const val = emailInput.value.trim();
+    if(val.includes('@') && isFreeEmail(val)){
+      emailError.classList.add('show');
+    } else {
+      emailError.classList.remove('show');
+    }
+  });
+
+  /* =====================================================================
+     CONDITIONAL "OTHER" FIELDS
+     ---------------------------------------------------------------------
+     Four dropdowns (industry, job title, CRM stack, primary challenge)
+     each reveal a free-text field when their "other" option is picked.
+     Scoring always treats "other" as 0 points on that signal regardless
+     of what's typed here -- these fields are for CRM context only.
+  ===================================================================== */
+  function wireConditionalOther(selectId, fieldWrapId, inputId, otherTriggerValue){
+    const select = document.getElementById(selectId);
+    const wrap = document.getElementById(fieldWrapId);
+    const input = document.getElementById(inputId);
+
+    select.addEventListener('change', () => {
+      if(select.value === otherTriggerValue){
+        wrap.classList.add('show');
+        input.setAttribute('required', 'required');
+      } else {
+        wrap.classList.remove('show');
+        input.removeAttribute('required');
+        input.value = '';
+      }
+    });
+  }
+
+  wireConditionalOther('industry', 'industryOtherField', 'industryOther', 'other');
+  wireConditionalOther('jobTitle', 'jobTitleOtherField', 'jobTitleOther', 'other');
+  wireConditionalOther('crmStack', 'crmStackOtherField', 'crmStackOther', 'other_none');
+  wireConditionalOther('revenueChallenge', 'revenueChallengeOtherField', 'revenueChallengeOther', 'other');
+
+  /* =====================================================================
+     LASER-TRACE BORDER + DATA PULSE
+     ---------------------------------------------------------------------
+     On focus: the conic-gradient trace-frame sweeps a point of neon light
+     clockwise around the input's border once (~0.6s), while a translucent
+     ripple expands outward from the field's edges and fades within ~400ms.
+  ===================================================================== */
+  document.querySelectorAll('.input-wrap').forEach(wrap => {
+    const fieldEl = wrap.querySelector('input, select');
+    if(!fieldEl) return;
+
+    fieldEl.addEventListener('focus', () => {
+      // Laser trace: restart the animation by toggling the class via rAF
+      wrap.classList.remove('tracing');
+      void wrap.offsetWidth; // force reflow so the animation can restart
+      requestAnimationFrame(() => wrap.classList.add('tracing'));
+
+      // Data pulse: create a fresh ripple element each time
+      const pulse = document.createElement('div');
+      pulse.className = 'data-pulse';
+      wrap.appendChild(pulse);
+      requestAnimationFrame(() => pulse.classList.add('expand'));
+      setTimeout(() => pulse.remove(), 420);
+    });
+
+    fieldEl.addEventListener('blur', () => {
+      setTimeout(() => wrap.classList.remove('tracing'), 600);
+    });
+  });
+
+  /* =====================================================================
+     REGISTRATION SUBMISSION
+     ---------------------------------------------------------------------
+     Posts directly to the Flask scoring backend (app.py) at
+     /api/v1/leads/score, which scores the lead across all 8 signals,
+     predicts revenue, and forwards the result to Make.com.
+  ===================================================================== */
+  const API_BASE_URL = 'http://localhost:5051';
+  const submitBtn = form.querySelector('.submit-btn');
+
+  function setSubmitting(isSubmitting){
+    submitBtn.disabled = isSubmitting;
+    submitBtn.style.opacity = isSubmitting ? '0.6' : '1';
+    submitBtn.style.cursor = isSubmitting ? 'wait' : 'pointer';
+  }
+
+  function showFormError(message){
+    let el = document.getElementById('formSubmitError');
+    if(!el){
+      el = document.createElement('div');
+      el.id = 'formSubmitError';
+      el.className = 'hint error show';
+      el.style.marginTop = '14px';
+      el.style.textAlign = 'center';
+      form.appendChild(el);
+    }
+    el.textContent = message;
+    el.classList.add('show');
+  }
+
+  function clearFormError(){
+    const el = document.getElementById('formSubmitError');
+    if(el) el.classList.remove('show');
+  }
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    clearFormError();
+
+    const val = emailInput.value.trim();
+    // Show soft warning for personal emails but don't block submission
+    if(isFreeEmail(val)){
+      emailError.classList.add('show');
+    }
+
+    const data = Object.fromEntries(new FormData(form).entries());
+    setSubmitting(true);
+
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/v1/leads/score`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+
+      const result = await res.json();
+
+      if(!res.ok || !result.success){
+        throw new Error(result.error || `Submission failed (${res.status})`);
+      }
+
+      console.log('Registration created:', result);
+      form.classList.add('hide');
+      document.getElementById('successScreen').classList.add('show');
+
+    } catch (err) {
+      console.error('Registration error:', err);
+      showFormError(
+        err.message.includes('fetch')
+          ? 'Could not reach the registration server. Make sure app.py is running (python app.py).'
+          : err.message
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  });
+</script>
+
+</body>
+</html>
